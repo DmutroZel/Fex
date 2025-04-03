@@ -201,7 +201,7 @@ $(document).ready(function() {
     formData.append('file', selectedFile);
 
 
-    axios.post('http://localhost:10000/upload', formData, {
+    axios.post('/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -246,7 +246,7 @@ $(document).ready(function() {
       return;
     }
   
-    axios.get(`http://localhost:10000/download/${code}`, {
+    axios.get(`/download/${code}`, {
       responseType: 'blob'
     })
     .then(res => {
