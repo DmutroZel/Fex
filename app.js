@@ -27,14 +27,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Update the File model to include originalFilename
+
 const File = mongose.model('File', {
   profilePicture: String,
   originalFilename: String,
   code: Number
 });
 
-// Update the upload route to store original filename
+
 app.post('/upload', upload.single('file'), (req, res) => {
 console.log(req.file);
 const profilePicture = req.file.filename;
@@ -53,7 +53,7 @@ file.save()
 });
 });
 
-// Fix the download route
+
 app.get('/download/:code', async (req, res) => {
 try {
   const code = parseInt(req.params.code);
@@ -83,6 +83,6 @@ try {
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 })
-app.listen(3000, () => {
-  console.log('Server started on port 3000');
+app.listen(10000, () => {
+  console.log('Server started on port 10000');
 });
