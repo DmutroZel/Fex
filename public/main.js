@@ -1,154 +1,119 @@
-//  const socket = io();
 
-//       const form = document.getElementById('form');
-//       const input = document.getElementById('input');
-
-//       form.addEventListener('submit', (e) => {
-//         e.preventDefault();
-//         if (input.value) {
-//           socket.emit('chat message', input.value);
-//           input.value = '';
-//         }
-//       });
-
-//       socket.on('chat message', (msg) => {
-//         const item = document.createElement('li');
-//         item.textContent = msg;
-//         document.getElementById('messages').appendChild(item);
-//         window.scrollTo(0, document.body.scrollHeight);
-//       });
-const socket = io();
-const clientId = 'user_' + Math.random().toString(36).substr(2, 9);
-
-socket.on('onlineUsers', function(count) {
-  $('#online-count').text(count);
-});
-
+   
 $(document).ready(function() {
-  
-  const savedColor = localStorage.getItem('chatThemeColor');
-  if (savedColor) {
-    applyColorTheme(savedColor);
-    $('#color-picker').val(savedColor);
-  }
-  
-  
-  $(document).one('click', enableSound);
-  
-  
-  $('#input').focus();
-});
-
-function enableSound() {
-  $('#message-sound')[0].muted = false;
-  console.log("Sound enabled");
-}
-
-$('#form').on('submit', function(e) {
-  e.preventDefault();
-  const inputVal = $('#input').val().trim();
-  if (inputVal) {
-    socket.emit('chat message', {
-      text: inputVal,
-      sender: clientId
+    const body = document.body;
+    const leafCount = 15;
+    const leafTypes = [
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%2343A047' d='M50,90c0,0-45-45-45-45S50,0,50,0s45,45,45,45S50,90,50,90z'/%3E%3C/svg%3E",
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%234CAF50' d='M95,50c-25,25-45,25-45,25s0-20-25-45S0,5,0,5s25,0,50,25S95,50,95,50z'/%3E%3C/svg%3E",
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle fill='%238BC34A' cx='50' cy='50' r='40'/%3E%3Cpath fill='none' stroke='%2376C043' stroke-width='5' d='M30,50c0,0,10-20,40,0c-30,20-40,0-40,0z'/%3E%3C/svg%3E"
+    ];
+    
+    for (let i = 0; i < leafCount; i++) {
+      const leaf = $('<div></div>').addClass('leaf');
+      $(leaf).css({
+        'background-image': `url(${leafTypes[Math.floor(Math.random() * leafTypes.length)]})`,
+        'left': `${Math.random() * 100}%`,
+        'top': `${Math.random() * 100}%`,
+        'animation-delay': `${Math.random() * 10}s`,
+        'animation-duration': `${15 + Math.random() * 15}s`,
+        'opacity': `${0.1 + Math.random() * 0.2}`,
+        'transform': `scale(${0.5 + Math.random()}) rotate(${Math.random() * 360}deg)`
+      });
+      $('body').append(leaf);
+    }
+    
+    $('#upload').click(function() {
+      if (!$('#file')[0].files[0]) {
+        alert('Будь ласка, виберіть файл!');
+        return;
+      }
+    
+      const formData = new FormData();
+      formData.append('file', $('#file')[0].files[0]);
+    
+      $('#currentCode').text('Завантаження...')
+        .css('animation', 'codePulse 1s infinite alternate');
+    
+      axios.post('http://localhost:3000/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      .then(res => {
+        $('#currentCode')
+          .text('Ваш код: ' + res.data.code)
+          .css('animation', 'codeSuccess 2s');
+        
+        setTimeout(() => {
+          $('#currentCode').css('animation', 'codeFade 5s infinite alternate');
+        }, 2000);
+      })
+      .catch(err => {
+        console.error(err);
+        $('#currentCode')
+          .text('Помилка: ' + (err.response?.data?.error || 'Щось пішло не так'))
+          .css('color', '#ffaaaa')
+          .css('animation', 'codeError 2s infinite alternate');
+      });
     });
     
-    playMessageSound('send');
-    $('#input').val('');
-  }
-});
-
-socket.on('chat message', function(msg) {
-  const $item = $('<li>');
-  
-  if (msg.sender === clientId) {
-    $item.addClass('self');
-  } else {
-    playMessageSound('receive');
-  }
-  
-  $item.text(msg.text);
-  $('#messages').append($item);
-  
-  window.scrollTo(0, document.body.scrollHeight);
-});
-
-function playMessageSound(type) {
-  const $messageSound = $('#message-sound');
-  
-  if ($messageSound[0].muted) {
-    console.log("Sound is blocked by browser. User interaction needed.");
-    return;
-  }
-  
-  const soundPath = './sounds/fart-with-reverb-39675.mp3';
-  $messageSound.attr('src', soundPath);
-  
-  console.log(`Attempting to play sound (${type})...`);
-  $messageSound[0].currentTime = 0;
-  
-  $messageSound[0].play()
-    .then(() => console.log(`Sound ${type} played successfully!`))
-    .catch(err => {
-      console.error(`Error playing ${type} sound:`, err);
-      console.log("Audio state:", $messageSound[0].readyState);
+    $('#download').click(function() {
+      let code = $('#downloadCode').val();
+      
+      if (!code) {
+        alert('Будь ласка, введіть код!');
+        return;
+      }
+      
+      axios.get(`http://localhost:3000/download/${code}`)
+        .then(res => {
+          if ($('#downloadedFile').length === 0) {
+            $('.wrap').append('<div class="image-container"><img id="downloadedFile" alt="Завантажений файл"></div>');
+          }
+          
+          $('#downloadedFile').attr('src', `http://localhost:3000/uploads/${res.data.file}`);
+          $('#downloadedFile').css('animation', 'imageFadeIn 1s');
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Помилка: ' + (err.response?.data?.error || 'Файл не знайдено'));
+        });
     });
-}
-
-$('#color-picker').on('input', function() {
-  const color = $(this).val();
-  applyColorTheme(color);
-  localStorage.setItem('chatThemeColor', color);
-});
-
-function applyColorTheme(color) {
-  const r = parseInt(color.slice(1, 3), 16);
-  const g = parseInt(color.slice(3, 5), 16);
-  const b = parseInt(color.slice(5, 7), 16);
-  
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  const isDarkTheme = brightness < 128;
-  
-  const root = $(':root');
-  
-  root.css({
-    '--primary-light': color,
-    '--primary-light-rgb': `${r}, ${g}, ${b}`,
-    '--primary-background': color,
-    '--form-background': `rgba(${r}, ${g}, ${b}, 0.9)`,
-    '--control-background': `rgba(${r}, ${g}, ${b}, 0.8)`,
-    '--is-dark-theme': isDarkTheme ? 1 : 0
-  });
-  
-  if (isDarkTheme) {
-    root.css({
-      '--dark-color': 'rgba(255, 255, 255, 0.9)',
-      '--dark-color-solid': '#ffffff',
-      '--dark-color-hover': '#f0f0f0',
-      '--text-on-dark': '#000000',
-      '--text-on-light': '#ffffff'
+    
+    $('#file').change(function() {
+      if (this.files[0]) {
+        const fileName = this.files[0].name;
+        $(this).addClass('file-selected');
+        $('#currentCode')
+          .text('Вибраний файл: ' + fileName)
+          .css('animation', 'fileSelected 1s');
+      }
     });
-  } else {
-    root.css({
-      '--dark-color': 'rgba(0, 0, 0, 0.8)',
-      '--dark-color-solid': '#000000',
-      '--dark-color-hover': '#333333',
-      '--text-on-dark': '#ffffff',
-      '--text-on-light': '#000000'
-    });
-  }
-  
-  updateExistingMessages(isDarkTheme, r, g, b);
-}
+  });
 
-function updateExistingMessages(isDarkTheme, r, g, b) {
-  $('#messages li.self').css({
-    'background-color': `rgba(${r}, ${g}, ${b}, 0.9)`,
-    'color': isDarkTheme ? '#ffffff' : '#000000'
-  });
+
+
+
+  // $('#upload').click(function () {
   
-  $('#messages li:not(.self)').css({
-    'background-color': isDarkTheme ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
-    'color': isDarkTheme ? '#000000' : '#ffffff'
-  });
-}
+//     let data = {
+//         file: $('#file')[0].files[0]
+//     }
+//     axios.post('http://localhost:3000/upload', data, 
+//     { headers: { 'Content-Type': 'multipart/form-data' } })
+//     .then(res => {
+//         $('#currnetCode').text(res.data.code);
+//     }
+//     )
+//     .catch(err => console.error(err));
+//     alert('File uploaded successfully');
+// });
+// $('#download').click(function () {
+//     let code = $('#code').val();
+//     axios.get(`http://localhost:3000/download/${code}`)
+//     .then(res => {
+//         $('#downloadedFile').attr('src', `http://localhost:3000/uploads/${res.data.file}`);
+//     })
+//     .catch(err => console.error(err));
+// });  
