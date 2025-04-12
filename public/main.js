@@ -1,302 +1,154 @@
-// $(document).ready(function() {
- 
-//   let currentUploadedFile = null;
-  
- 
-//   function showPopup(message, type = 'info') {
-//     const popup = $('#forest-popup');
-//     const popupMessage = $('.forest-popup-message');
-//     const popupIcon = $('.forest-popup-icon i');
-    
-   
-//     popupMessage.text(message);
-    
-   
-//     if (type === 'error') {
-//       popup.addClass('forest-popup-error');
-//       popupIcon.removeClass('fa-leaf fa-check').addClass('fa-exclamation-circle');
-//     } else if (type === 'success') {
-//       popup.addClass('forest-popup-success');
-//       popupIcon.removeClass('fa-leaf fa-exclamation-circle').addClass('fa-check');
-//     } else {
-//       popup.removeClass('forest-popup-error forest-popup-success');
-//       popupIcon.removeClass('fa-check fa-exclamation-circle').addClass('fa-leaf');
-//     }
-    
-   
-//     popup.addClass('forest-popup-show');
-  
-//     setTimeout(() => {
-//       popup.removeClass('forest-popup-show');
-//     }, 3000);
-//   }
- 
-//   $('#upload').click(function() {
-//     const fileInput = $('#file')[0];
-//     const selectedFile = fileInput.files[0];
-    
-//     if (!selectedFile) {
-//       showPopup('Будь ласка, виберіть файл!', 'error');
-//       return;
-//     }
-    
-  
-//     if (currentUploadedFile && 
-//         currentUploadedFile.name === selectedFile.name && 
-//         currentUploadedFile.size === selectedFile.size && 
-//         currentUploadedFile.lastModified === selectedFile.lastModified) {
-//       showPopup('Цей файл вже було завантажено. Виберіть інший файл.', );
-//       return;
-//     }
-    
-//     const formData = new FormData();
-//     formData.append('file', selectedFile);
-    
-   
-//     axios.post('http://localhost:3000/upload', formData, {
-//       headers: {
-//         'Content-Type': 'multipart/form-data'
-//       }
-//     })
-//     .then(res => {
-//       $('#currentCode')
-//         .text('Ваш код: ' + res.data.code)
-//         .css('animation', 'codeSuccess 2s');
-      
-//       setTimeout(() => {
-//         $('#currentCode').css('animation', 'codeFade 5s infinite alternate');
-//       }, 2000);
-      
-      
-//       currentUploadedFile = selectedFile;
-      
-     
-//       $('#upload').prop('disabled', true).addClass('button-disabled')
-//         .html('Файл завантажено <i class="fas fa-check"></i>');
-      
-//       showPopup('Файл успішно завантажено!', 'success');
-//     })
-//     .catch(err => {
-//       console.error(err);
-//       $('#currentCode')
-//         .text('Помилка: ' + ( 'Щось пішло не так'))
-//         .css('color', '#ffaaaa')
-//         .css('animation', 'codeError 2s infinite alternate');
-      
-    
-      
-      
-//       showPopup('Помилка: ' + ('Щось пішло не так'), 'error');
-//     });
-//   });
-  
+//  const socket = io();
 
-// $('#download').click(function() {
-//   let code = $('#downloadCode').val();
-  
-//   if (!code) {
-//     showPopup('Будь ласка, введіть код!', 'error');
-//     return;
-//   }
-  
-//   axios.get(`http://localhost:3000/download/${code}`, {
-//     responseType: 'blob' 
-//   })
-//   .then(res => {
-//     const blob = new Blob([res.data]);
-//     const url = window.URL.createObjectURL(blob);
-//     const a = document.createElement('a');
-//     a.style.display = 'none';
-//     a.href = url;
+//       const form = document.getElementById('form');
+//       const input = document.getElementById('input');
 
-//     const filename = res.headers['content-disposition']?.split('filename=')[1] || 'downloaded-file';
-//     a.download = filename;
-//     document.body.appendChild(a);
-//     a.click();
-//     window.URL.revokeObjectURL(url);
-//     document.body.removeChild(a);
-//     showPopup('Файл успішно завантажено!', 'success');
-//   })
-//   .catch(err => {
-//     console.error(err);
-//     showPopup('Помилка: ' + (err.response?.data?.error || 'Файл не знайдено'), 'error');
-//   });
-// });
+//       form.addEventListener('submit', (e) => {
+//         e.preventDefault();
+//         if (input.value) {
+//           socket.emit('chat message', input.value);
+//           input.value = '';
+//         }
+//       });
 
-  
-//   $('#file').change(function() {
-//     if (this.files[0]) {
-//       const fileName = this.files[0].name;
-//       $(this).addClass('file-selected');
-//       $('#currentCode')
-//         .text('Вибраний файл: ' + fileName)
-//         .css('animation', 'fileSelected 1s');
-      
-     
-//       $('#upload').prop('disabled', false)
-//         .removeClass('button-disabled')
-//         .html('Upload')
-//         .css('opacity', '1');
-      
-      
-//       currentUploadedFile = null;
-//     }
-//   });
+//       socket.on('chat message', (msg) => {
+//         const item = document.createElement('li');
+//         item.textContent = msg;
+//         document.getElementById('messages').appendChild(item);
+//         window.scrollTo(0, document.body.scrollHeight);
+//       });
+const socket = io();
+const clientId = 'user_' + Math.random().toString(36).substr(2, 9);
 
-// });
-
+socket.on('onlineUsers', function(count) {
+  $('#online-count').text(count);
+});
 
 $(document).ready(function() {
-
-  let currentUploadedFile = null;
-
-
-  function showPopup(message, type = 'info') {
-    const popup = $('#forest-popup');
-    const popupMessage = $('.forest-popup-message');
-    const popupIcon = $('.forest-popup-icon i');
-
-
-    popupMessage.text(message);
-
-
-    if (type === 'error') {
-      popup.addClass('forest-popup-error');
-      popupIcon.removeClass('fa-leaf fa-check').addClass('fa-exclamation-circle');
-    } else if (type === 'success') {
-      popup.addClass('forest-popup-success');
-      popupIcon.removeClass('fa-leaf fa-exclamation-circle').addClass('fa-check');
-    } else {
-      popup.removeClass('forest-popup-error forest-popup-success');
-      popupIcon.removeClass('fa-check fa-exclamation-circle').addClass('fa-leaf');
-    }
-
-
-    popup.addClass('forest-popup-show');
-
-    setTimeout(() => {
-      popup.removeClass('forest-popup-show');
-    }, 3000);
+  
+  const savedColor = localStorage.getItem('chatThemeColor');
+  if (savedColor) {
+    applyColorTheme(savedColor);
+    $('#color-picker').val(savedColor);
   }
-
-  $('#upload').click(function() {
-    const fileInput = $('#file')[0];
-    const selectedFile = fileInput.files[0];
-
-    if (!selectedFile) {
-      showPopup('Будь ласка, виберіть файл!', 'error');
-      return;
-    }
-
-
-    if (currentUploadedFile &&
-        currentUploadedFile.name === selectedFile.name &&
-        currentUploadedFile.size === selectedFile.size &&
-        currentUploadedFile.lastModified === selectedFile.lastModified) {
-      showPopup('Цей файл вже було завантажено. Виберіть інший файл.', );
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-
-    axios.post('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-    .then(res => {
-      $('#currentCode')
-        .text('Ваш код: ' + res.data.code)
-        .css('animation', 'codeSuccess 2s');
-
-      setTimeout(() => {
-        $('#currentCode').css('animation', 'codeFade 5s infinite alternate');
-      }, 2000);
-
-
-      currentUploadedFile = selectedFile;
-
-
-      $('#upload').prop('disabled', true).addClass('button-disabled')
-        .html('Файл завантажено <i class="fas fa-check"></i>');
-
-      showPopup('Файл успішно завантажено!', 'success');
-    })
-    .catch(err => {
-      console.error(err);
-      $('#currentCode')
-        .text('Помилка: ' + ( 'Щось пішло не так'))
-        .css('color', '#ffaaaa')
-        .css('animation', 'codeError 2s infinite alternate');
-
-
-
-
-      showPopup('Помилка: ' + ('Щось пішло не так'), 'error');
-    });
-  });
-
-  $('#download').click(function() {
-    const code = $('#downloadCode').val();
   
-    if (!code) {
-      showPopup('Будь ласка, введіть код!', 'error');
-      return;
-    }
   
-    axios.get(`/download/${code}`, {
-      responseType: 'blob'
-    })
-    .then(res => {
-      
-      const blob = new Blob([res.data]);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      
-     
-      const disposition = res.headers['content-disposition'];
-      const filename = disposition ? 
-        disposition.split('filename=')[1].replace(/["']/g, '') : 
-        'downloaded-file';
+  $(document).one('click', enableSound);
   
-     
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      
-     
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      showPopup('Файл успішно завантажено!', 'success');
-    })
-    .catch(err => {
-      console.error(err);
-      showPopup('Помилка: ' + (err.response?.data?.error || 'Файл не знайдено'), 'error');
-    });
-  });
-
-
-  $('#file').change(function() {
-    if (this.files[0]) {
-      const fileName = this.files[0].name;
-      $(this).addClass('file-selected');
-      $('#currentCode')
-        .text('Вибраний файл: ' + fileName)
-        .css('animation', 'fileSelected 1s');
-
-
-      $('#upload').prop('disabled', false)
-        .removeClass('button-disabled')
-        .html('Upload')
-        .css('opacity', '1');
-
-
-      currentUploadedFile = null;
-    }
-  });
-
+  
+  $('#input').focus();
 });
+
+function enableSound() {
+  $('#message-sound')[0].muted = false;
+  console.log("Sound enabled");
+}
+
+$('#form').on('submit', function(e) {
+  e.preventDefault();
+  const inputVal = $('#input').val().trim();
+  if (inputVal) {
+    socket.emit('chat message', {
+      text: inputVal,
+      sender: clientId
+    });
+    
+    playMessageSound('send');
+    $('#input').val('');
+  }
+});
+
+socket.on('chat message', function(msg) {
+  const $item = $('<li>');
+  
+  if (msg.sender === clientId) {
+    $item.addClass('self');
+  } else {
+    playMessageSound('receive');
+  }
+  
+  $item.text(msg.text);
+  $('#messages').append($item);
+  
+  window.scrollTo(0, document.body.scrollHeight);
+});
+
+function playMessageSound(type) {
+  const $messageSound = $('#message-sound');
+  
+  if ($messageSound[0].muted) {
+    console.log("Sound is blocked by browser. User interaction needed.");
+    return;
+  }
+  
+  const soundPath = './sounds/fart-with-reverb-39675.mp3';
+  $messageSound.attr('src', soundPath);
+  
+  console.log(`Attempting to play sound (${type})...`);
+  $messageSound[0].currentTime = 0;
+  
+  $messageSound[0].play()
+    .then(() => console.log(`Sound ${type} played successfully!`))
+    .catch(err => {
+      console.error(`Error playing ${type} sound:`, err);
+      console.log("Audio state:", $messageSound[0].readyState);
+    });
+}
+
+$('#color-picker').on('input', function() {
+  const color = $(this).val();
+  applyColorTheme(color);
+  localStorage.setItem('chatThemeColor', color);
+});
+
+function applyColorTheme(color) {
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+  
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  const isDarkTheme = brightness < 128;
+  
+  const root = $(':root');
+  
+  root.css({
+    '--primary-light': color,
+    '--primary-light-rgb': `${r}, ${g}, ${b}`,
+    '--primary-background': color,
+    '--form-background': `rgba(${r}, ${g}, ${b}, 0.9)`,
+    '--control-background': `rgba(${r}, ${g}, ${b}, 0.8)`,
+    '--is-dark-theme': isDarkTheme ? 1 : 0
+  });
+  
+  if (isDarkTheme) {
+    root.css({
+      '--dark-color': 'rgba(255, 255, 255, 0.9)',
+      '--dark-color-solid': '#ffffff',
+      '--dark-color-hover': '#f0f0f0',
+      '--text-on-dark': '#000000',
+      '--text-on-light': '#ffffff'
+    });
+  } else {
+    root.css({
+      '--dark-color': 'rgba(0, 0, 0, 0.8)',
+      '--dark-color-solid': '#000000',
+      '--dark-color-hover': '#333333',
+      '--text-on-dark': '#ffffff',
+      '--text-on-light': '#000000'
+    });
+  }
+  
+  updateExistingMessages(isDarkTheme, r, g, b);
+}
+
+function updateExistingMessages(isDarkTheme, r, g, b) {
+  $('#messages li.self').css({
+    'background-color': `rgba(${r}, ${g}, ${b}, 0.9)`,
+    'color': isDarkTheme ? '#ffffff' : '#000000'
+  });
+  
+  $('#messages li:not(.self)').css({
+    'background-color': isDarkTheme ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+    'color': isDarkTheme ? '#000000' : '#ffffff'
+  });
+}
