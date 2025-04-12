@@ -25,42 +25,59 @@ const storage = multer.diskStorage({
   }
 });
 
-
-
-const User = mongose.model('User', {
-    profilePicture: String,
-    code: Number
-});
-
 const upload = multer({ storage: storage });
 
-app.post('/upload', upload.single('file'), (req, res) => {
-  console.log(req.file);
-  const profilePicture = req.file.filename;
-  let code = Math.floor(Math.random()* (999999 - 100000 ) + 100000);
-  
-  const user = new User({  profilePicture, code });
-  user.save()
-  .then(() => {
-    console.log('User saved successfully');
-  })
-  res.json({ code });
+// Update the File model to include originalFilename
+const File = mongose.model('File', {
+  profilePicture: String,
+  originalFilename: String,
+  code: Number
 });
 
-app.get('/download/:code', (req, res) => {
-  const code = req.params.code;
-  User.findOne({ code: code })
-  .then((user) => {
-    if(user) {
-      res.json({file: user.profilePicture, code: user.code});
-    } else {
-      res.status(404).json({error: 'User not found'});
+// Update the upload route to store original filename
+app.post('/upload', upload.single('file'), (req, res) => {
+console.log(req.file);
+const profilePicture = req.file.filename;
+const originalFilename = req.file.originalname;
+let code = Math.floor(Math.random()* (999999 - 100000 ) + 100000);
+
+const file = new File({ profilePicture, originalFilename, code });
+file.save()
+.then(() => {
+  console.log('File saved successfully');
+  res.json({ code });
+})
+.catch(err => {
+  console.error('Error saving file:', err);
+  res.status(500).json({ error: 'Error saving file' });
+});
+});
+
+// Fix the download route
+app.get('/download/:code', async (req, res) => {
+try {
+  const code = parseInt(req.params.code);
+  const file = await File.findOne({ code: code });
+  
+  if (!file) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+
+  const filePath = path.join(__dirname, 'uploads', file.profilePicture);
+  
+
+
+  res.download(filePath, file.originalFilename, (err) => {
+    if (err) {
+      console.error('Download error:', err);
+      res.status(500).json({ error: 'Error downloading file' });
     }
-  })
-  .catch((error) => {
-    console.error('Error:', error);
-    res.status(500).send('Internal Server Error');
-  })
+  });
+
+} catch (err) {
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Server error' });
+}
 });
 
 app.get('/', (req, res) => {
